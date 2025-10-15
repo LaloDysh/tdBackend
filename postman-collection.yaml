@@ -1,499 +1,1367 @@
-openapi: 3.0.0
-info:
-  title: TaxDown Motorbike Shop API
-  description: API for managing customers in the motorbike shop with credit management
-  version: 1.0.0
-  contact:
-    name: API Support
-servers:
-  - url: http://localhost:3000
-    description: Local development server (serverless-offline)
-  - url: https://your-api-id.execute-api.eu-west-1.amazonaws.com/dev
-    description: Development environment (AWS)
-  - url: https://your-api-id.execute-api.eu-west-1.amazonaws.com/prod
-    description: Production environment (AWS)
-
-paths:
-  /customers:
-    post:
-      summary: Create a new customer
-      description: Creates a new customer with the provided information
-      tags:
-        - Customers
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - firstName
-                - lastName
-                - email
-                - phoneNumber
-                - address
-              properties:
-                firstName:
-                  type: string
-                  example: John
-                  description: Customer's first name
-                lastName:
-                  type: string
-                  example: Doe
-                  description: Customer's last name
-                email:
-                  type: string
-                  format: email
-                  example: john@example.com
-                  description: Customer's email address
-                phoneNumber:
-                  type: string
-                  example: "+34612345678"
-                  description: Customer's phone number in international format
-                address:
-                  type: object
-                  required:
-                    - street
-                    - city
-                    - postalCode
-                    - country
-                  properties:
-                    street:
-                      type: string
-                      example: Main St 123
-                    city:
-                      type: string
-                      example: Madrid
-                    postalCode:
-                      type: string
-                      example: "28001"
-                    country:
-                      type: string
-                      example: Spain
-                availableCredit:
-                  type: number
-                  format: double
-                  example: 100
-                  description: Initial credit amount (optional, defaults to 0)
-            examples:
-              basic:
-                summary: Basic customer creation
-                value:
-                  firstName: John
-                  lastName: Doe
-                  email: john@example.com
-                  phoneNumber: "+34612345678"
-                  address:
-                    street: Main St 123
-                    city: Madrid
-                    postalCode: "28001"
-                    country: Spain
-              withCredit:
-                summary: Customer with initial credit
-                value:
-                  firstName: Jane
-                  lastName: Smith
-                  email: jane@example.com
-                  phoneNumber: "+34687654321"
-                  address:
-                    street: Central Ave 456
-                    city: Barcelona
-                    postalCode: "08001"
-                    country: Spain
-                  availableCredit: 250.50
-      responses:
-        '201':
-          description: Customer created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerResponse'
-        '400':
-          description: Bad request - Invalid input data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    get:
-      summary: List all customers
-      description: Retrieves a list of all customers
-      tags:
-        - Customers
-      responses:
-        '200':
-          description: List of customers retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CustomerResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /customers/{id}:
-    get:
-      summary: Get customer by ID
-      description: Retrieves a specific customer by their ID
-      tags:
-        - Customers
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Customer ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Customer retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerResponse'
-        '400':
-          description: Bad request - Invalid customer ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    put:
-      summary: Update customer
-      description: Updates an existing customer's information
-      tags:
-        - Customers
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Customer ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - firstName
-                - lastName
-                - email
-                - phoneNumber
-                - address
-              properties:
-                firstName:
-                  type: string
-                  example: Jane
-                lastName:
-                  type: string
-                  example: Smith
-                email:
-                  type: string
-                  format: email
-                  example: jane@example.com
-                phoneNumber:
-                  type: string
-                  example: "+34687654321"
-                address:
-                  type: object
-                  required:
-                    - street
-                    - city
-                    - postalCode
-                    - country
-                  properties:
-                    street:
-                      type: string
-                      example: New St 456
-                    city:
-                      type: string
-                      example: Barcelona
-                    postalCode:
-                      type: string
-                      example: "08001"
-                    country:
-                      type: string
-                      example: Spain
-            examples:
-              update:
-                summary: Update customer information
-                value:
-                  firstName: Jane
-                  lastName: Smith
-                  email: jane.smith@example.com
-                  phoneNumber: "+34687654321"
-                  address:
-                    street: Updated Street 789
-                    city: Valencia
-                    postalCode: "46001"
-                    country: Spain
-      responses:
-        '200':
-          description: Customer updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerResponse'
-        '400':
-          description: Bad request - Invalid input data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    delete:
-      summary: Delete customer
-      description: Deletes a customer by ID
-      tags:
-        - Customers
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Customer ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '204':
-          description: Customer deleted successfully
-        '400':
-          description: Bad request - Invalid customer ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /customers/{id}/credit:
-    post:
-      summary: Add credit to customer
-      description: Adds credit amount to a customer's available credit
-      tags:
-        - Credit Management
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Customer ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - amount
-              properties:
-                amount:
-                  type: number
-                  format: double
-                  example: 50
-                  description: Credit amount to add (must be positive)
-            examples:
-              addCredit:
-                summary: Add credit to customer
-                value:
-                  amount: 75.50
-              addLargeCredit:
-                summary: Add large credit amount
-                value:
-                  amount: 500
-      responses:
-        '200':
-          description: Credit added successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CustomerResponse'
-        '400':
-          description: Bad request - Invalid amount or customer ID
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Customer not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /customers/sorted/by-credit:
-    get:
-      summary: List customers sorted by credit
-      description: Retrieves all customers sorted by available credit amount
-      tags:
-        - Credit Management
-      parameters:
-        - name: order
-          in: query
-          required: false
-          description: Sort order (asc for ascending, desc for descending)
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: desc
-          example: desc
-      responses:
-        '200':
-          description: List of customers sorted by credit
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CustomerResponse'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-components:
-  schemas:
-    CustomerResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          type: object
-          properties:
-            id:
-              type: string
-              format: uuid
-              example: "550e8400-e29b-41d4-a716-446655440000"
-            firstName:
-              type: string
-              example: John
-            lastName:
-              type: string
-              example: Doe
-            email:
-              type: string
-              format: email
-              example: john@example.com
-            phoneNumber:
-              type: string
-              example: "+34612345678"
-            address:
-              type: object
-              properties:
-                street:
-                  type: string
-                  example: Main St 123
-                city:
-                  type: string
-                  example: Madrid
-                postalCode:
-                  type: string
-                  example: "28001"
-                country:
-                  type: string
-                  example: Spain
-            availableCredit:
-              type: number
-              format: double
-              example: 100.50
-            createdAt:
-              type: string
-              format: date-time
-              example: "2024-01-15T10:30:00.000Z"
-            updatedAt:
-              type: string
-              format: date-time
-              example: "2024-01-15T10:30:00.000Z"
-
-    ErrorResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: false
-        error:
-          type: string
-          example: "Error message describing what went wrong"
-
-tags:
-  - name: Customers
-    description: Customer management endpoints
-  - name: Credit Management
-    description: Customer credit management endpoints
+{
+	"info": {
+		"_postman_id": "8fb346ae-9a2e-4ff4-b0b5-79b6e142d7e7",
+		"name": "TaxDown Motorbike Shop API",
+		"description": "API for managing customers in the motorbike shop with credit management\n\nContact Support:\n Name: API Support",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37501151",
+		"_collection_link": "https://universe-7537.postman.co/workspace/Universe-Workspace~417cb8f2-0959-45cc-86ae-281dc9bb700c/collection/37501151-8fb346ae-9a2e-4ff4-b0b5-79b6e142d7e7?action=share&source=collection_link&creator=37501151"
+	},
+	"item": [
+		{
+			"name": "customers",
+			"item": [
+				{
+					"name": "{id}",
+					"item": [
+						{
+							"name": "credit",
+							"item": [
+								{
+									"name": "Add credit to customer",
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"amount\": 75.5\n}",
+											"options": {
+												"raw": {
+													"headerFamily": "json",
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id/credit",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id",
+												"credit"
+											],
+											"variable": [
+												{
+													"key": "id",
+													"value": "{{userId}}",
+													"description": "Customer ID (UUID format)"
+												}
+											]
+										},
+										"description": "Adds credit amount to a customer's available credit"
+									},
+									"response": [
+										{
+											"name": "Add credit to customer",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Content-Type",
+														"value": "application/json"
+													},
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"amount\": 75.5\n}",
+													"options": {
+														"raw": {
+															"headerFamily": "json",
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/customers/:id/credit",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"customers",
+														":id",
+														"credit"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{userId}}"
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phoneNumber\": \"+34612345678\",\n    \"address\": {\n      \"street\": \"Main St 123\",\n      \"city\": \"Madrid\",\n      \"postalCode\": \"28001\",\n      \"country\": \"Spain\"\n    },\n    \"availableCredit\": 100.5,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+										},
+										{
+											"name": "Add large credit amount",
+											"originalRequest": {
+												"method": "POST",
+												"header": [
+													{
+														"key": "Content-Type",
+														"value": "application/json"
+													},
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n  \"amount\": 500\n}",
+													"options": {
+														"raw": {
+															"headerFamily": "json",
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{baseUrl}}/customers/:id/credit",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"customers",
+														":id",
+														"credit"
+													],
+													"variable": [
+														{
+															"key": "id",
+															"value": "{{userId}}"
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phoneNumber\": \"+34612345678\",\n    \"address\": {\n      \"street\": \"Main St 123\",\n      \"city\": \"Madrid\",\n      \"postalCode\": \"28001\",\n      \"country\": \"Spain\"\n    },\n    \"availableCredit\": 100.5,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+										}
+									]
+								}
+							]
+						},
+						{
+							"name": "Get customer by ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/customers/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{userId}}",
+											"description": "Customer ID (UUID format)"
+										}
+									]
+								},
+								"description": "Retrieves a specific customer by their ID"
+							},
+							"response": [
+								{
+									"name": "Customer retrieved successfully",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phoneNumber\": \"+34612345678\",\n    \"address\": {\n      \"street\": \"Main St 123\",\n      \"city\": \"Madrid\",\n      \"postalCode\": \"28001\",\n      \"country\": \"Spain\"\n    },\n    \"availableCredit\": 100.5,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+								},
+								{
+									"name": "Bad request - Invalid customer ID",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								},
+								{
+									"name": "Customer not found",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								},
+								{
+									"name": "Internal server error",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Internal Server Error",
+									"code": 500,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Update customer",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Updated Street 789\",\n    \"city\": \"Valencia\",\n    \"postalCode\": \"46001\",\n    \"country\": \"Spain\"\n  }\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{userId}}",
+											"description": "Customer ID (UUID format)"
+										}
+									]
+								},
+								"description": "Updates an existing customer's information"
+							},
+							"response": [
+								{
+									"name": "Customer updated successfully",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Updated Street 789\",\n    \"city\": \"Valencia\",\n    \"postalCode\": \"46001\",\n    \"country\": \"Spain\"\n  }\n}",
+											"options": {
+												"raw": {
+													"headerFamily": "json",
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phoneNumber\": \"+34612345678\",\n    \"address\": {\n      \"street\": \"Main St 123\",\n      \"city\": \"Madrid\",\n      \"postalCode\": \"28001\",\n      \"country\": \"Spain\"\n    },\n    \"availableCredit\": 100.5,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+								},
+								{
+									"name": "Bad request - Invalid input data",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Updated Street 789\",\n    \"city\": \"Valencia\",\n    \"postalCode\": \"46001\",\n    \"country\": \"Spain\"\n  }\n}",
+											"options": {
+												"raw": {
+													"headerFamily": "json",
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								},
+								{
+									"name": "Customer not found",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Updated Street 789\",\n    \"city\": \"Valencia\",\n    \"postalCode\": \"46001\",\n    \"country\": \"Spain\"\n  }\n}",
+											"options": {
+												"raw": {
+													"headerFamily": "json",
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								},
+								{
+									"name": "Internal server error",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "Content-Type",
+												"value": "application/json"
+											},
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Updated Street 789\",\n    \"city\": \"Valencia\",\n    \"postalCode\": \"46001\",\n    \"country\": \"Spain\"\n  }\n}",
+											"options": {
+												"raw": {
+													"headerFamily": "json",
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Internal Server Error",
+									"code": 500,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Delete customer",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/customers/:id",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers",
+										":id"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "{{userId}}",
+											"description": "Customer ID (UUID format)"
+										}
+									]
+								},
+								"description": "Deletes a customer by ID"
+							},
+							"response": [
+								{
+									"name": "Customer deleted successfully",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "No Content",
+									"code": 204,
+									"_postman_previewlanguage": "text",
+									"header": [],
+									"cookie": [],
+									"body": ""
+								},
+								{
+									"name": "Bad request - Invalid customer ID",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								},
+								{
+									"name": "Customer not found",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Not Found",
+									"code": 404,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								},
+								{
+									"name": "Internal server error",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/:id",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												":id"
+											],
+											"variable": [
+												{
+													"key": "id"
+												}
+											]
+										}
+									},
+									"status": "Internal Server Error",
+									"code": 500,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										}
+									],
+									"cookie": [],
+									"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "sorted",
+					"item": [
+						{
+							"name": "by-credit",
+							"item": [
+								{
+									"name": "List customers sorted by credit",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json"
+											}
+										],
+										"url": {
+											"raw": "{{baseUrl}}/customers/sorted/by-credit?order=desc",
+											"host": [
+												"{{baseUrl}}"
+											],
+											"path": [
+												"customers",
+												"sorted",
+												"by-credit"
+											],
+											"query": [
+												{
+													"key": "order",
+													"value": "desc",
+													"description": "Sort order (asc for ascending, desc for descending)"
+												}
+											]
+										},
+										"description": "Retrieves all customers sorted by available credit amount"
+									},
+									"response": [
+										{
+											"name": "List of customers sorted by credit",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/customers/sorted/by-credit?order=desc",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"customers",
+														"sorted",
+														"by-credit"
+													],
+													"query": [
+														{
+															"key": "order",
+															"value": "desc",
+															"description": "Sort order (asc for ascending, desc for descending)"
+														}
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"success\": true,\n      \"data\": {\n        \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"email\": \"john@example.com\",\n        \"phoneNumber\": \"+34612345678\",\n        \"address\": {\n          \"street\": \"Main St 123\",\n          \"city\": \"Madrid\",\n          \"postalCode\": \"28001\",\n          \"country\": \"Spain\"\n        },\n        \"availableCredit\": 100.5,\n        \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n      }\n    },\n    {\n      \"success\": true,\n      \"data\": {\n        \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"email\": \"john@example.com\",\n        \"phoneNumber\": \"+34612345678\",\n        \"address\": {\n          \"street\": \"Main St 123\",\n          \"city\": \"Madrid\",\n          \"postalCode\": \"28001\",\n          \"country\": \"Spain\"\n        },\n        \"availableCredit\": 100.5,\n        \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n      }\n    }\n  ]\n}"
+										},
+										{
+											"name": "Internal server error",
+											"originalRequest": {
+												"method": "GET",
+												"header": [
+													{
+														"key": "Accept",
+														"value": "application/json"
+													}
+												],
+												"url": {
+													"raw": "{{baseUrl}}/customers/sorted/by-credit?order=desc",
+													"host": [
+														"{{baseUrl}}"
+													],
+													"path": [
+														"customers",
+														"sorted",
+														"by-credit"
+													],
+													"query": [
+														{
+															"key": "order",
+															"value": "desc",
+															"description": "Sort order (asc for ascending, desc for descending)"
+														}
+													]
+												}
+											},
+											"status": "Internal Server Error",
+											"code": 500,
+											"_postman_previewlanguage": "json",
+											"header": [
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												}
+											],
+											"cookie": [],
+											"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+										}
+									]
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Create a new customer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Script para la pestaña \"Tests\" en Postman",
+									"// Guarda el ID de la respuesta en una variable de colección",
+									"",
+									"// Parsear la respuesta JSON",
+									"const response = pm.response.json();",
+									"",
+									"// Verificar que la respuesta sea exitosa",
+									"if (response.success && response.data && response.data.id) {",
+									"    // Guardar el ID en una variable de colección",
+									"    pm.collectionVariables.set(\"userId\", response.data.id);",
+									"    ",
+									"    // Mensaje de confirmación en la consola",
+									"    console.log(\"✅ ID guardado:\", response.data.id);",
+									"    ",
+									"    // También puedes guardarlo como variable de entorno si lo prefieres",
+									"    // pm.environment.set(\"userId\", response.data.id);",
+									"} else {",
+									"    console.log(\"❌ No se pudo extraer el ID de la respuesta\");",
+									"}",
+									"",
+									"// Test opcional para verificar que se guardó correctamente",
+									"pm.test(\"ID guardado correctamente\", function () {",
+									"    pm.expect(pm.collectionVariables.get(\"userId\")).to.not.be.undefined;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+34612345678\",\n  \"address\": {\n    \"street\": \"Main St 123\",\n    \"city\": \"Madrid\",\n    \"postalCode\": \"28001\",\n    \"country\": \"Spain\"\n  }\n}",
+							"options": {
+								"raw": {
+									"headerFamily": "json",
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers"
+							]
+						},
+						"description": "Creates a new customer with the provided information"
+					},
+					"response": [
+						{
+							"name": "Basic customer creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+34612345678\",\n  \"address\": {\n    \"street\": \"Main St 123\",\n    \"city\": \"Madrid\",\n    \"postalCode\": \"28001\",\n    \"country\": \"Spain\"\n  }\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phoneNumber\": \"+34612345678\",\n    \"address\": {\n      \"street\": \"Main St 123\",\n      \"city\": \"Madrid\",\n      \"postalCode\": \"28001\",\n      \"country\": \"Spain\"\n    },\n    \"availableCredit\": 100.5,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+						},
+						{
+							"name": "Customer with initial credit",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Central Ave 456\",\n    \"city\": \"Barcelona\",\n    \"postalCode\": \"08001\",\n    \"country\": \"Spain\"\n  },\n  \"availableCredit\": 250.5\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phoneNumber\": \"+34612345678\",\n    \"address\": {\n      \"street\": \"Main St 123\",\n      \"city\": \"Madrid\",\n      \"postalCode\": \"28001\",\n      \"country\": \"Spain\"\n    },\n    \"availableCredit\": 100.5,\n    \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n    \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n  }\n}"
+						},
+						{
+							"name": "Basic customer creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+34612345678\",\n  \"address\": {\n    \"street\": \"Main St 123\",\n    \"city\": \"Madrid\",\n    \"postalCode\": \"28001\",\n    \"country\": \"Spain\"\n  }\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+						},
+						{
+							"name": "Customer with initial credit",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Central Ave 456\",\n    \"city\": \"Barcelona\",\n    \"postalCode\": \"08001\",\n    \"country\": \"Spain\"\n  },\n  \"availableCredit\": 250.5\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+						},
+						{
+							"name": "Basic customer creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"phoneNumber\": \"+34612345678\",\n  \"address\": {\n    \"street\": \"Main St 123\",\n    \"city\": \"Madrid\",\n    \"postalCode\": \"28001\",\n    \"country\": \"Spain\"\n  }\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+						},
+						{
+							"name": "Customer with initial credit",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane@example.com\",\n  \"phoneNumber\": \"+34687654321\",\n  \"address\": {\n    \"street\": \"Central Ave 456\",\n    \"city\": \"Barcelona\",\n    \"postalCode\": \"08001\",\n    \"country\": \"Spain\"\n  },\n  \"availableCredit\": 250.5\n}",
+									"options": {
+										"raw": {
+											"headerFamily": "json",
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+						}
+					]
+				},
+				{
+					"name": "List all customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers"
+							]
+						},
+						"description": "Retrieves a list of all customers"
+					},
+					"response": [
+						{
+							"name": "List of customers retrieved successfully",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"success\": true,\n      \"data\": {\n        \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"email\": \"john@example.com\",\n        \"phoneNumber\": \"+34612345678\",\n        \"address\": {\n          \"street\": \"Main St 123\",\n          \"city\": \"Madrid\",\n          \"postalCode\": \"28001\",\n          \"country\": \"Spain\"\n        },\n        \"availableCredit\": 100.5,\n        \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n      }\n    },\n    {\n      \"success\": true,\n      \"data\": {\n        \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"firstName\": \"John\",\n        \"lastName\": \"Doe\",\n        \"email\": \"john@example.com\",\n        \"phoneNumber\": \"+34612345678\",\n        \"address\": {\n          \"street\": \"Main St 123\",\n          \"city\": \"Madrid\",\n          \"postalCode\": \"28001\",\n          \"country\": \"Spain\"\n        },\n        \"availableCredit\": 100.5,\n        \"createdAt\": \"2024-01-15T10:30:00.000Z\",\n        \"updatedAt\": \"2024-01-15T10:30:00.000Z\"\n      }\n    }\n  ]\n}"
+						},
+						{
+							"name": "Internal server error",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/customers",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"customers"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": \"Error message describing what went wrong\"\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "userId",
+			"value": ""
+		}
+	]
+}
