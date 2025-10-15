@@ -1,0 +1,153 @@
+service: taxdown-motorbike-shop-api
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: eu-west-1
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  environment:
+    STAGE: ${self:provider.stage}
+    # File-based storage is enabled by default for local development
+    # Set to 'false' to use in-memory storage instead
+    USE_FILE_STORAGE: ${env:USE_FILE_STORAGE, 'true'}
+  apiGateway:
+    shouldStartNameWithService: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+        # When deploying to production with DynamoDB, add permissions here:
+        # - Effect: Allow
+        #   Action:
+        #     - dynamodb:GetItem
+        #     - dynamodb:PutItem
+        #     - dynamodb:UpdateItem
+        #     - dynamodb:DeleteItem
+        #     - dynamodb:Query
+        #     - dynamodb:Scan
+        #   Resource: 'arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.tableName}'
+
+plugins:
+  - serverless-offline
+
+# Package configuration - only include necessary files for deployment
+package:
+  patterns:
+    - '!src/**'
+    - '!data/**'
+    - '!coverage/**'
+    - '!node_modules/**'
+    - '!.git/**'
+    - '!*.md'
+    - '!tsconfig.json'
+    - '!jest.config.js'
+    - 'dist/**'
+    - 'node_modules/**'
+
+functions:
+  # Customer Management Endpoints
+  createCustomer:
+    handler: dist/infrastructure/api/handler.createCustomer
+    description: Create a new customer with contact and address information
+    events:
+      - http:
+          path: customers
+          method: post
+          cors: true
+
+  getCustomer:
+    handler: dist/infrastructure/api/handler.getCustomer
+    description: Retrieve a customer by their unique ID
+    events:
+      - http:
+          path: customers/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+  updateCustomer:
+    handler: dist/infrastructure/api/handler.updateCustomer
+    description: Update an existing customer's information
+    events:
+      - http:
+          path: customers/{id}
+          method: put
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+  deleteCustomer:
+    handler: dist/infrastructure/api/handler.deleteCustomer
+    description: Delete a customer from the system
+    events:
+      - http:
+          path: customers/{id}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+  listCustomers:
+    handler: dist/infrastructure/api/handler.listCustomers
+    description: List all customers in the system
+    events:
+      - http:
+          path: customers
+          method: get
+          cors: true
+
+  # Credit Management Endpoints
+  addCredit:
+    handler: dist/infrastructure/api/handler.addCredit
+    description: Add credit to a customer's account
+    events:
+      - http:
+          path: customers/{id}/credit
+          method: post
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+  listCustomersByCredit:
+    handler: dist/infrastructure/api/handler.listCustomersByCredit
+    description: List all customers sorted by available credit (desc by default)
+    events:
+      - http:
+          path: customers/sorted/by-credit
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                order: false
+
+custom:
+  # Table name for DynamoDB (when implementing production database)
+  # tableName: ${self:service}-customers-${self:provider.stage}
+
+  # Serverless Offline Configuration
+  serverless-offline:
+    httpPort: 3000
+    noPrependStageInUrl: true
+    # Lambda execution environment
+    lambdaPort: 3002
+    # Use file-based storage for local development (data/customers.db.json)
+    # This provides data persistence across serverless-offline restarts
